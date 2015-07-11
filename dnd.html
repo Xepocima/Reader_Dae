@@ -1,0 +1,332 @@
+<html lang="en">
+	<head>
+		<title>Import from Blender</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+
+			}
+
+			a { color: skyblue }
+#dropBox {
+    margin: 2px;
+    width: 100px;
+    height: 50px;
+    border: 2px dashed gray;
+    border-radius: 2px;
+    background:black;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    text-align: center;
+position:fixed;
+top: 1px;
+left: 1px;
+}
+ 
+#dropBox div {
+
+    color: orange;
+    font-size:12px;
+    font-family: Verdana, Arial, sans-serif;
+}
+#fileInput {
+	display:none;
+}
+#fileOutput{
+color: orange;
+position: fixed;
+top: 550px;
+left: 3px;
+}
+		</style>
+
+		<script src="three.min.js"></script>
+		<script src="ColladaLoader.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="OrbitControls.js"></script>
+
+
+<script>
+
+var dropBox;
+
+window.onload = function() {
+  dropBox = document.getElementById("dropBox");
+  dropBox.ondragenter = ignoreDrag;
+  dropBox.ondragover = ignoreDrag;
+  dropBox.ondrop = drop;
+}
+
+function ignoreDrag(e) {
+  // Обеспечиваем, чтобы никто другой не получил это событие, 
+  // т.к. мы выполняем операцию перетаскивания
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function drop(e) {
+  // Аннулируем это событие для всех других
+  e.stopPropagation();
+  e.preventDefault();
+ 
+  // Получаем перемещенные файлы
+  var data = e.dataTransfer;
+  var files = data.files;
+	 
+  // Передаем полученный файл функции для обработки файлов
+  processFiles(files);
+}
+
+function processFiles(files) {
+  var file = files[0];
+  
+  var reader = new FileReader();
+
+  reader.onload = function (e) {
+   var output = document.getElementById("fileOutput");   
+    output.textContent = e.target.result;
+
+  };
+  
+  // Начинаем считывать 
+  reader.readAsText(file);
+console.log(file);
+addObj(file);
+}
+</script>
+<script>
+
+function Model(config) {
+    this.setName(config.name);
+}
+
+Model.prototype = {
+    getName: function() {
+        return this._name;
+    },
+
+    setName: function(name) {
+        this._name = name;
+    }
+};
+
+var firstModel = new Model({
+    name: 'monkey_blue.dae'
+});
+
+var secondModel = new Model({
+    name: 'monkey2.dae'
+});
+
+function addObj(file){
+ delObj();
+/*-----------------------------------------------------------------------------*/
+			var loader = new THREE.ColladaLoader();
+			loader.options.convertUpAxis = true;
+			loader.load(file, function ( collada ) {
+//path+secondModel.getName()
+			dae = collada.scene;
+
+				dae.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+					}
+
+
+				} );
+
+				dae.scale.x = dae.scale.y = dae.scale.z = 1.0;
+				dae.updateMatrix();
+scene.add(dae);
+animate();
+} );
+/*-----------------------------------------------------------------------------*/
+
+
+}
+function delObj(){
+
+var lastIndex = scene.children.length-1; 
+endElement = scene.children[lastIndex];
+scene.remove(endElement);
+
+animate();
+
+}
+</script>
+
+<script>
+	if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			var path =  './files/';
+			var clock = new THREE.Clock();
+			var container;
+			var camera, scene, renderer, objects;
+			var particleLight;
+			var dae;
+			var controls;
+		
+		//Загрузка стартовой модели
+
+
+			var loader = new THREE.ColladaLoader();
+			loader.options.convertUpAxis = true;
+			loader.load(path+firstModel.getName(), function ( collada ) {
+
+				dae = collada.scene;
+
+				dae.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+					}
+
+				} );
+
+				dae.scale.x = dae.scale.y = dae.scale.z = 1.0;
+				dae.updateMatrix();
+
+			init();	
+			animate();
+			} );
+
+
+
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.set( 2, 2, 3 );
+
+				scene = new THREE.Scene();
+
+				// Сетка
+
+				var size = 14, step = 1;
+
+				var geometry = new THREE.Geometry();
+				var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
+
+				for ( var i = - size; i <= size; i += step ) {
+
+					geometry.vertices.push( new THREE.Vector3( - size, - 0.04, i ) );
+					geometry.vertices.push( new THREE.Vector3(   size, - 0.04, i ) );
+
+					geometry.vertices.push( new THREE.Vector3( i, - 0.04, - size ) );
+					geometry.vertices.push( new THREE.Vector3( i, - 0.04,   size ) );
+
+				}
+
+				var line = new THREE.Line( geometry, material, THREE.LinePieces );
+				scene.add( line );
+
+				
+
+				particleLight = new THREE.Mesh( new THREE.SphereGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
+				scene.add( particleLight );
+
+				// Свет
+
+				scene.add( new THREE.AmbientLight( 0xcccccc ) );
+
+				var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+				directionalLight.position.x = Math.random() - 0.5;
+				directionalLight.position.y = Math.random() - 0.5;
+				directionalLight.position.z = Math.random() - 0.5;
+				directionalLight.position.normalize();
+				scene.add( directionalLight );
+
+				var pointLight = new THREE.PointLight( 0xffffff, 4 );
+				particleLight.add( pointLight );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				scene.add( dae );
+				
+				//Управление камерой
+
+				controls = new THREE.OrbitControls( camera );
+				controls.damping = 0.1;
+				controls.addEventListener( 'change', render );
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				animate();
+				
+
+			}
+
+			function onWindowResize() 
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				console.log('Resize()');
+			}
+
+			//
+
+
+			function animate() {
+				requestAnimationFrame( animate );
+				controls.update();
+				render();
+			}
+
+			function render() {
+
+				var timer = Date.now() * 0.0005;
+
+				camera.lookAt( scene.position );
+
+				particleLight.position.x = Math.sin( timer * 4 ) * 2009;
+				particleLight.position.y = Math.cos( timer * 5 ) * 3000;
+				particleLight.position.z = Math.cos( timer * 4 ) * 2009;
+
+				THREE.AnimationHandler.update( clock.getDelta() );
+
+				renderer.render( scene, camera );
+		
+			}
+
+
+</script>
+	</head>
+	<body>
+	<!--<form>
+		<input type="button" value="Добавить модель" onclick="addObj()">
+		<input type="button" value="Удалить модель" onclick="delObj()">
+	</form>-->
+<div id="dropBox">
+     <div>Перетащите вашу модель сюда...</div>
+  </div>
+  <input id="fileInput" type="file" onchange="processFiles(this.files)">
+<div id="fileOutput"></div>
+	</body>
+</html>
